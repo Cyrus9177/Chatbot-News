@@ -74,46 +74,72 @@ class FactCheckBot {
 
     async fetchRealTimeInfo(query) {
         try {
-            // Check if query contains any of our topics
-            const topics = ['covid', 'climate', 'health', 'science', 'technology'];
             const userQuery = query.toLowerCase();
             
-            for (const topic of topics) {
-                if (userQuery.includes(topic)) {
+            // List of categories and their related keywords
+            const categories = {
+                news: ['news', 'current', 'latest', 'update', 'today'],
+                politics: ['politics', 'government', 'election', 'president', 'duterte', 'philippines'],
+                health: ['health', 'medical', 'disease', 'covid', 'vaccine'],
+                science: ['science', 'research', 'study', 'discovery'],
+                technology: ['tech', 'technology', 'digital', 'software', 'app'],
+                climate: ['climate', 'weather', 'environment', 'global']
+            };
+
+            // Find matching category
+            for (const [category, keywords] of Object.entries(categories)) {
+                if (keywords.some(keyword => userQuery.includes(keyword))) {
+                    const response = {
+                        news: {
+                            title: "Latest News Updates",
+                            suggestions: [
+                                "Reuters for international coverage",
+                                "Associated Press for verified news",
+                                "Local news websites for regional updates",
+                                "Official government websites"
+                            ],
+                            url: "https://www.reuters.com/world"
+                        },
+                        politics: {
+                            title: "Political Information",
+                            suggestions: [
+                                "Official government websites",
+                                "Philippine News Agency",
+                                "Reputable local news sources",
+                                "International news coverage"
+                            ],
+                            url: "https://www.officialgazette.gov.ph"
+                        },
+                        health: this.fallbackData.health,
+                        science: this.fallbackData.science,
+                        technology: this.fallbackData.technology,
+                        climate: this.fallbackData.climate
+                    };
+
                     return {
-                        latestNews: [this.fallbackData[topic]],
+                        latestNews: [{
+                            title: `Information about ${query}`,
+                            source: { name: response[category].title },
+                            url: response[category].url,
+                            publishedAt: new Date().toISOString()
+                        }],
                         timestamp: new Date(),
-                        sources: [this.fallbackData[topic].source.name],
-                        topic: topic
+                        sources: ["Verified Sources"],
+                        suggestions: response[category].suggestions || [
+                            "Check official sources",
+                            "Verify with fact-checking websites",
+                            "Compare multiple reliable sources",
+                            "Look for recent updates"
+                        ],
+                        category: category
                     };
                 }
             }
 
-            // For news queries, provide news-specific sources
-            if (userQuery.includes('news')) {
-                return {
-                    latestNews: [{
-                        title: `News about "${query.replace('?', '')}"`,
-                        source: { name: "News Sources" },
-                        url: "https://www.reuters.com",
-                        publishedAt: new Date().toISOString()
-                    }],
-                    timestamp: new Date(),
-                    sources: ["Reuters"],
-                    suggestions: [
-                        "Reuters for international news",
-                        "Associated Press for verified reporting",
-                        "BBC News for global coverage",
-                        "Local news sources for regional updates"
-                    ],
-                    isNews: true
-                };
-            }
-
-            // Default response for other queries
+            // Default response with general fact-checking suggestions
             return {
                 latestNews: [{
-                    title: `Information about "${query.replace('?', '')}"`,
+                    title: `General Information`,
                     source: { name: "Fact-Check Bot" },
                     url: "https://www.reuters.com/fact-check",
                     publishedAt: new Date().toISOString()
@@ -121,10 +147,10 @@ class FactCheckBot {
                 timestamp: new Date(),
                 sources: ["Multiple Sources"],
                 suggestions: [
-                    "Reuters Fact Check for verification",
-                    "Associated Press Fact Check",
-                    "Snopes for fact checking",
-                    "Official government websites"
+                    "Verify information from multiple sources",
+                    "Check recent news coverage",
+                    "Consult fact-checking websites",
+                    "Look for official statements"
                 ]
             };
         } catch (error) {
@@ -173,10 +199,10 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
-        if (info.isNews) {
-            return `For news about "${info.latestNews[0].title.replace('News about ', '').replace(/"/g, '')}", check these sources:\n\n` +
+        if (info.category) {
+            return `Regarding "${info.latestNews[0].title}":\n\n` +
                    info.suggestions.map(s => `• ${s}`).join('\n') +
-                   `\n\nStart with: ${info.latestNews[0].url}`;
+                   `\n\nRecommended source: ${info.latestNews[0].url}`;
         }
 
         if (info.suggestions) {
