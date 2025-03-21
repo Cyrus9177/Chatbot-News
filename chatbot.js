@@ -158,15 +158,19 @@ class FactCheckBot {
         const latest = info.latestNews[0];
         
         if (info.suggestions) {
-            return `Here are reliable sources for "${info.latestNews[0].title}":
-                    \n${info.suggestions.join('\n')}
-                    \nFor fact-checking, visit: ${latest.url}`;
+            const query = latest.title.replace('Information about ', '').replace(/"/g, '');
+            return `For information about ${query}, here are reliable sources:\n\n` +
+                   `• ${info.suggestions[0]}\n` +
+                   `• ${info.suggestions[1]}\n` +
+                   `• ${info.suggestions[2]}\n` +
+                   `• ${info.suggestions[3]}\n\n` +
+                   `Visit: ${latest.url}`;
         }
 
-        return `Based on reliable information about ${info.topic || 'this topic'}:
-                \n"${latest.title}"
-                \nSource: ${latest.source.name}
-                \nRead more: ${latest.url}`;
+        return `Based on reliable information about ${info.topic}:\n\n` +
+               `"${latest.title}"\n` +
+               `Source: ${latest.source.name}\n` +
+               `Read more: ${latest.url}`;
     }
 }
 
