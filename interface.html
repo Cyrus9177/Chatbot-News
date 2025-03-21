@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fact-Checking Chatbot</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #chat-container {
+            max-width: 800px;
+            width: 90%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            padding: 20px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-header {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        #chat-header h1 {
+            color: #333;
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+        .message {
+            margin-bottom: 15px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.3s ease forwards;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message.user {
+            text-align: right;
+        }
+        .message-content {
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 20px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .message.bot .message-content {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .message.user .message-content {
+            background: #333;
+            color: white;
+        }
+        #input-container {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        #user-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        #user-input:focus {
+            border-color: #333;
+        }
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">
+            <h1>AI Fact-Checking Assistant</h1>
+        </div>
+        <div id="chat-messages">
+            <noscript>
+                <div class="message bot">
+                    <div class="message-content">
+                        ⚠️ This chatbot requires JavaScript and needs to be run on a local server.
+                        <br><br>
+                        Quick setup:
+                        <br>
+                        1. Open this folder in VS Code
+                        <br>
+                        2. Install "Live Server" extension
+                        <br>
+                        3. Right-click this file and select "Open with Live Server"
+                    </div>
+                </div>
+            </noscript>
+        </div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Ask me anything...">
+            <button onclick="window.sendMessage()">Send</button>
+        </div>
+    </div>
+    <!-- Load scripts in correct order -->
+    <script>
+        // Initialize config globally
+        const config = {
+            newsAPI: '32a49784526946c78b1bb9e326b10aee',
+            factCheckAPI: 'AIzaSyChajhxsddtpChEI9157q9EB3VuskniJhA'
+        };
+    </script>
+    <script src="knowledgeBase.js"></script>
+    <script src="chatbot.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
