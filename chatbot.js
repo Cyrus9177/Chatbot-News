@@ -194,11 +194,15 @@ class FactCheckBot {
             const urls = latest.urls;
             return `📰 ${latest.title}\n\nReliable sources:\n${info.suggestions.join('\n')}\n\n` +
                    `🔍 Quick links:\n` +
-                   Object.entries(urls).map(([type, url]) => `• ${type}: ${url}`).join('\n');
+                   Object.entries(urls).map(([type, url]) => 
+                       `• ${type}: <a href="${url}" target="_blank">${url}</a>`
+                   ).join('\n');
         }
 
         return `🔍 ${latest.title}\n\nRecommendations:\n${info.suggestions.join('\n')}\n\n` +
-               `Useful links:\n• News: ${latest.urls.search}\n• Fact Check: ${latest.urls.factCheck}`;
+               `Useful links:\n` +
+               `• News: <a href="${latest.urls.search}" target="_blank">Click here</a>\n` +
+               `• Fact Check: <a href="${latest.urls.factCheck}" target="_blank">Click here</a>`;
     }
 }
 

@@ -69,6 +69,13 @@
             background: #333;
             color: white;
         }
+        .message-content a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        .message-content a:hover {
+            text-decoration: underline;
+        }
         #input-container {
             padding: 20px;
             border-top: 1px solid #eee;
@@ -138,6 +145,16 @@
             newsAPI: '32a49784526946c78b1bb9e326b10aee',
             factCheckAPI: 'AIzaSyChajhxsddtpChEI9157q9EB3VuskniJhA'
         };
+
+        // Update message rendering to support HTML
+        window.sendMessage = async function() {
+            // ...existing code...
+            messages.innerHTML += `
+                <div class="message bot">
+                    <div class="message-content">${response.replace(/\n/g, '<br>')}</div>
+                </div>`;
+            // ...existing code...
+        }
     </script>
     <script src="knowledgeBase.js"></script>
     <script src="chatbot.js"></script>
