@@ -76,81 +76,78 @@ class FactCheckBot {
         try {
             const userQuery = query.toLowerCase();
             
-            // List of categories and their related keywords
+            // Enhanced categories with specific URLs
             const categories = {
-                news: ['news', 'current', 'latest', 'update', 'today'],
-                politics: ['politics', 'government', 'election', 'president', 'duterte', 'philippines'],
-                health: ['health', 'medical', 'disease', 'covid', 'vaccine'],
-                science: ['science', 'research', 'study', 'discovery'],
-                technology: ['tech', 'technology', 'digital', 'software', 'app'],
-                climate: ['climate', 'weather', 'environment', 'global']
+                philippines: {
+                    keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila'],
+                    title: "Philippine News",
+                    suggestions: [
+                        "Philippine News Agency - Official news",
+                        "Rappler - Independent journalism",
+                        "Inquirer.net - Latest updates",
+                        "ABS-CBN News - Breaking news"
+                    ],
+                    url: "https://www.pna.gov.ph/latest"
+                },
+                news: {
+                    keywords: ['news', 'current', 'latest', 'update', 'today'],
+                    title: "Latest News Updates",
+                    suggestions: [
+                        "Reuters News - World coverage",
+                        "AP News - Breaking news",
+                        "BBC News - International news",
+                        "Al Jazeera - Global perspective"
+                    ],
+                    url: "https://www.reuters.com/world"
+                },
+                politics: {
+                    keywords: ['politics', 'government', 'election', 'president'],
+                    title: "Political Information",
+                    suggestions: [
+                        "Official government portals",
+                        "Election commission updates",
+                        "Political fact-checking sites",
+                        "Legislative updates"
+                    ],
+                    url: "https://www.gov.ph"
+                }
             };
 
             // Find matching category
-            for (const [category, keywords] of Object.entries(categories)) {
-                if (keywords.some(keyword => userQuery.includes(keyword))) {
-                    const response = {
-                        news: {
-                            title: "Latest News Updates",
-                            suggestions: [
-                                "Reuters for international coverage",
-                                "Associated Press for verified news",
-                                "Local news websites for regional updates",
-                                "Official government websites"
-                            ],
-                            url: "https://www.reuters.com/world"
-                        },
-                        politics: {
-                            title: "Political Information",
-                            suggestions: [
-                                "Official government websites",
-                                "Philippine News Agency",
-                                "Reputable local news sources",
-                                "International news coverage"
-                            ],
-                            url: "https://www.officialgazette.gov.ph"
-                        },
-                        health: this.fallbackData.health,
-                        science: this.fallbackData.science,
-                        technology: this.fallbackData.technology,
-                        climate: this.fallbackData.climate
-                    };
-
+            for (const [categoryName, category] of Object.entries(categories)) {
+                if (category.keywords.some(keyword => userQuery.includes(keyword))) {
                     return {
                         latestNews: [{
-                            title: `Information about ${query}`,
-                            source: { name: response[category].title },
-                            url: response[category].url,
+                            title: category.title,
+                            source: { name: category.title },
+                            url: category.url,
                             publishedAt: new Date().toISOString()
                         }],
                         timestamp: new Date(),
-                        sources: ["Verified Sources"],
-                        suggestions: response[category].suggestions || [
-                            "Check official sources",
-                            "Verify with fact-checking websites",
-                            "Compare multiple reliable sources",
-                            "Look for recent updates"
-                        ],
-                        category: category
+                        sources: category.suggestions,
+                        category: categoryName,
+                        specificSuggestions: category.suggestions,
+                        specificUrl: category.url
                     };
                 }
             }
 
-            // Default response with general fact-checking suggestions
+            // If no category matches, return topic-specific search
+            const searchQuery = encodeURIComponent(query);
             return {
                 latestNews: [{
-                    title: `General Information`,
-                    source: { name: "Fact-Check Bot" },
-                    url: "https://www.reuters.com/fact-check",
+                    title: `Information about "${query}"`,
+                    source: { name: "Search Results" },
+                    url: `https://www.google.com/search?q=${searchQuery}+fact+check`,
                     publishedAt: new Date().toISOString()
                 }],
                 timestamp: new Date(),
                 sources: ["Multiple Sources"],
                 suggestions: [
-                    "Verify information from multiple sources",
-                    "Check recent news coverage",
-                    "Consult fact-checking websites",
-                    "Look for official statements"
+                    `Search results for "${query}"`,
+                    "Fact-checking websites",
+                    "Official sources",
+                    "News archives"
                 ]
             };
         } catch (error) {
@@ -199,6 +196,12 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
+        if (info.specificSuggestions) {
+            return `Here are reliable sources for ${info.latestNews[0].title}:\n\n` +
+                   info.specificSuggestions.map(s => `• ${s}`).join('\n') +
+                   `\n\nStart here: ${info.specificUrl}`;
+        }
+
         if (info.category) {
             return `Regarding "${info.latestNews[0].title}":\n\n` +
                    info.suggestions.map(s => `• ${s}`).join('\n') +
