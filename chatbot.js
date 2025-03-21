@@ -48,9 +48,12 @@ class FactCheckBot {
 
     async fetchRealTimeInfo(query) {
         try {
+            console.log('Fetching news for:', query); // Debug log
             const response = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${this.apis.newsAPI}`);
             const data = await response.json();
-            if (data.status === 'error') {
+            console.log('API response:', data); // Debug log
+
+            if (data.status === 'error' || !data.articles || data.articles.length === 0) {
                 // Use fallback data if API fails
                 const fallbackTopic = Object.keys(this.fallbackData).find(key => query.toLowerCase().includes(key));
                 if (fallbackTopic) {
@@ -60,10 +63,12 @@ class FactCheckBot {
                         sources: [this.fallbackData[fallbackTopic].source.name]
                     };
                 }
+                throw new Error('No news found');
             }
             return this.processNewsData(data);
         } catch (error) {
-            throw new Error('API request failed');
+            console.error('API Error:', error); // Debug log
+            throw error;
         }
     }
 
@@ -78,7 +83,8 @@ class FactCheckBot {
     }
 
     generateResponse(intent, input, realTimeInfo) {
-        if (realTimeInfo) {
+        console.log('Generating response:', { intent, realTimeInfo }); // Debug log
+        if (realTimeInfo && realTimeInfo.latestNews && realTimeInfo.latestNews.length > 0) {
             return this.formatRealTimeResponse(intent, realTimeInfo);
         }
         switch(intent) {
@@ -115,4 +121,5 @@ class FactCheckBot {
     }
 }
 
+// Make it globally available
 window.FactCheckBot = FactCheckBot;
