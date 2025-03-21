@@ -41,57 +41,6 @@ class FactCheckBot {
                 publishedAt: new Date().toISOString()
             }
         };
-        this.categories = {
-            philippines: {
-                keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila', 'ph'],
-                title: "Philippine News & Information",
-                suggestions: [
-                    "🔗 Inquirer.net - Latest Philippine news",
-                    "🔗 Philstar.com - Latest headlines",
-                    "🔗 Official Gazette - Government updates",
-                    "🔗 ABS-CBN News - Breaking news"
-                ],
-                urls: {
-                    news: "https://www.inquirer.net",
-                    government: "https://www.gov.ph",
-                    factCheck: "https://www.rappler.com/newsbreak/fact-check"
-                }
-            },
-            news: {
-                keywords: ['news', 'current', 'latest', 'update', 'today', 'breaking'],
-                title: "Current News & Updates",
-                suggestions: [
-                    "🌐 Reuters - International coverage",
-                    "🌐 AP News - Global updates",
-                    "🌐 BBC News - World news",
-                    "📰 Local news sources for regional context"
-                ],
-                urls: {
-                    international: "https://www.reuters.com",
-                    regional: "https://news.google.com"
-                }
-            },
-            // Add more categories as needed
-        };
-        this.newsPortals = {
-            philippines: {
-                keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila'],
-                sources: [
-                    { name: 'Philippine Daily Inquirer', url: 'https://www.inquirer.net/philippines' },
-                    { name: 'Rappler', url: 'https://www.rappler.com/nation' },
-                    { name: 'ABS-CBN News', url: 'https://news.abs-cbn.com/news' }
-                ]
-            },
-            technology: {
-                keywords: ['tech', 'technology', 'digital', 'ai', 'software'],
-                sources: [
-                    { name: 'TechCrunch', url: 'https://techcrunch.com' },
-                    { name: 'The Verge', url: 'https://www.theverge.com' },
-                    { name: 'Wired', url: 'https://www.wired.com' }
-                ]
-            },
-            // Add more categories as needed
-        };
         this.newsCategories = {
             philippines: {
                 keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila'],
