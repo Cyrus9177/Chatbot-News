@@ -21,6 +21,24 @@ class FactCheckBot {
                 source: { name: "Reuters" },
                 url: "https://www.reuters.com",
                 publishedAt: new Date().toISOString()
+            },
+            technology: {
+                title: "Technology News and Updates",
+                source: { name: "Tech News" },
+                url: "https://www.theverge.com/tech",
+                publishedAt: new Date().toISOString()
+            },
+            health: {
+                title: "Health Information",
+                source: { name: "CDC" },
+                url: "https://www.cdc.gov/",
+                publishedAt: new Date().toISOString()
+            },
+            science: {
+                title: "Scientific Information",
+                source: { name: "Science.gov" },
+                url: "https://www.science.gov/",
+                publishedAt: new Date().toISOString()
             }
         };
     }
@@ -51,87 +69,95 @@ class FactCheckBot {
         const normalizedInput = input.toLowerCase();
         if (normalizedInput.includes('?')) return 'question';
         if (normalizedInput.includes('fact')) return 'factCheck';
-        return 'general';sAPI}`,
-    }                    'User-Agent': 'factcheckbot/1.0',
+        return 'general';
+    }
 
     async fetchRealTimeInfo(query) {
         try {
-            console.log('Fetching news for:', query); // Debug logetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en`, options);
-            const response = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${this.apis.newsAPI}`);it response.json();
+            // Try to find a matching topic in fallback data first
+            const topic = query.toLowerCase();
+            const fallbackTopic = Object.keys(this.fallbackData).find(key => topic.includes(key));
+            if (fallbackTopic) {
+                return {
+                    latestNews: [this.fallbackData[fallbackTopic]],
+                    timestamp: new Date(),
+                    sources: [this.fallbackData[fallbackTopic].source.name]
+                };
+            }
+
+            // If no fallback found, try the API
+            const response = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${this.apis.newsAPI}`);
             const data = await response.json();
-            console.log('API response:', data); // Debug log
-th === 0) {
-            if (data.status === 'error' || !data.articles || data.articles.length === 0) { fallback data if API fails
-                // Use fallback data if API failsonst fallbackTopic = Object.keys(this.fallbackData).find(key => query.toLowerCase().includes(key));
-                const fallbackTopic = Object.keys(this.fallbackData).find(key => query.toLowerCase().includes(key));
-                if (fallbackTopic) {       return {
-                    return {backData[fallbackTopic]],
-                        latestNews: [this.fallbackData[fallbackTopic]],imestamp: new Date(),
-                        timestamp: new Date(),Topic].source.name]
-                        sources: [this.fallbackData[fallbackTopic].source.name]
-                    };       }
-                }           throw new Error('No news found');
-                throw new Error('No news found');            }
-            }cessNewsData(data);
+            
+            if (data.status === 'error' || !data.articles || data.articles.length === 0) {
+                // Return general fallback if API fails
+                return {
+                    latestNews: [this.fallbackData.science],
+                    timestamp: new Date(),
+                    sources: ['Reliable Sources']
+                };
+            }
             return this.processNewsData(data);
-        } catch (error) {    console.error('API Error:', error);
-            console.error('API Error:', error); // Debug logw error;
-            throw error;
+        } catch (error) {
+            console.error('API Error:', error);
+            // Return general information on error
+            return {
+                latestNews: [{
+                    title: "Please check trusted sources for this information",
+                    source: { name: "Fact-Check Bot" },
+                    url: "https://www.reuters.com/fact-check",
+                    publishedAt: new Date().toISOString()
+                }],
+                timestamp: new Date(),
+                sources: ['Fact-Check Bot']
+            };
         }
     }
-sNewsData(data) {
-    processNewsData(data) {   if (!data.articles || data.articles.length === 0) return null;
-        if (!data.articles || data.articles.length === 0) return null;        
-        
+
+    processNewsData(data) {
+        if (!data.articles || data.articles.length === 0) return null;
+        return {
             latestNews: data.articles.slice(0, 3),
             timestamp: new Date(),
             sources: data.articles.map(article => article.source.name)
-        };   sources: data.articles.map(article => article.source.name)
+        };
     }
 
     generateResponse(intent, input, realTimeInfo) {
-        console.log('Generating response:', { intent, realTimeInfo }); // Debug loginput, realTimeInfo) {
-        if (realTimeInfo && realTimeInfo.latestNews && realTimeInfo.latestNews.length > 0) {t, realTimeInfo }); // Debug log
-            return this.formatRealTimeResponse(intent, realTimeInfo);Info && realTimeInfo.latestNews && realTimeInfo.latestNews.length > 0) {
+        console.log('Generating response:', { intent, realTimeInfo }); // Debug log
+        if (realTimeInfo && realTimeInfo.latestNews && realTimeInfo.latestNews.length > 0) {
+            return this.formatRealTimeResponse(intent, realTimeInfo);
         }
         switch(intent) {
-            case 'question':   switch(intent) {
-                return this.handleQuestion(input);            case 'question':
-            case 'factCheck':.handleQuestion(input);
+            case 'question':
+                return this.handleQuestion(input);
+            case 'factCheck':
                 return this.handleFactCheck(input);
-            default:ck(input);
+            default:
                 return "I'm here to help combat misinformation. How can I assist you?";
-        }here to help combat misinformation. How can I assist you?";
+        }
     }
 
     handleQuestion(input) {
         const keywords = input.toLowerCase().split(' ');
-        for (const keyword of keywords) {   const keywords = input.toLowerCase().split(' ');
-            const fact = this.knowledgeBase.getFact(keyword);        for (const keyword of keywords) {
-            if (fact.fact) {s.knowledgeBase.getFact(keyword);
+        for (const keyword of keywords) {
+            const fact = this.knowledgeBase.getFact(keyword);
+            if (fact.fact) {
                 return `${fact.fact} (Source: ${fact.source})`;
-            }           return `${fact.fact} (Source: ${fact.source})`;
-        }            }
+            }
+        }
         return this.fetchRealTimeInfo(input);
-    }t);
+    }
 
     handleFactCheck(input) {
         return this.knowledgeBase.verifyStatement(input);
-    }atement(input);
+    }
 
     formatRealTimeResponse(intent, info) {
-        const latest = info.latestNews[0];    formatRealTimeResponse(intent, info) {
-        return `Based on recent information (${new Date(latest.publishedAt).toLocaleDateString()}):atestNews[0];
-                "${latest.title}"ormation (${new Date(latest.publishedAt).toLocaleDateString()}):
-                Source: ${latest.source.name}                "${latest.title}"
-
-
-
-
-
-
-
-window.FactCheckBot = FactCheckBot;// Make it globally available}    }                Read more: ${latest.url}`;                Source: ${latest.source.name}
+        const latest = info.latestNews[0];
+        return `Based on recent information (${new Date(latest.publishedAt).toLocaleDateString()}):
+                "${latest.title}"
+                Source: ${latest.source.name}
                 Read more: ${latest.url}`;
     }
 }
