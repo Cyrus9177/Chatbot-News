@@ -98,8 +98,7 @@ class FactCheckBot {
                 sources: [
                     { 
                         name: 'Inquirer.net', 
-                        url: 'https://www.inquirer.net/search/',
-                        searchParam: 'q',
+                        url: 'https://www.inquirer.net/search?q=',
                         credibility: 'Major news outlet'
                     },
                     { name: 'Rappler', url: 'https://www.rappler.com/search?q=', credibility: 'Independent journalism' },
@@ -109,7 +108,7 @@ class FactCheckBot {
             technology: {
                 keywords: ['tech', 'technology', 'digital', 'ai', 'software'],
                 sources: [
-                    { name: 'TechCrunch', url: 'https://techcrunch.com/search/', credibility: 'Tech industry leader' },
+                    { name: 'TechCrunch', url: 'https://techcrunch.com/search?q=', credibility: 'Tech industry leader' },
                     { name: 'The Verge', url: 'https://www.theverge.com/search?q=', credibility: 'Tech news authority' }
                 ]
             },
