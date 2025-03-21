@@ -73,6 +73,25 @@ class FactCheckBot {
             },
             // Add more categories as needed
         };
+        this.newsPortals = {
+            philippines: {
+                keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila'],
+                sources: [
+                    { name: 'Philippine Daily Inquirer', url: 'https://www.inquirer.net/philippines' },
+                    { name: 'Rappler', url: 'https://www.rappler.com/nation' },
+                    { name: 'ABS-CBN News', url: 'https://news.abs-cbn.com/news' }
+                ]
+            },
+            technology: {
+                keywords: ['tech', 'technology', 'digital', 'ai', 'software'],
+                sources: [
+                    { name: 'TechCrunch', url: 'https://techcrunch.com' },
+                    { name: 'The Verge', url: 'https://www.theverge.com' },
+                    { name: 'Wired', url: 'https://www.wired.com' }
+                ]
+            },
+            // Add more categories as needed
+        };
     }
 
     initialize() {
@@ -108,39 +127,30 @@ class FactCheckBot {
         try {
             const userQuery = query.toLowerCase();
             
-            // Check categories
-            for (const [categoryName, category] of Object.entries(this.categories)) {
-                if (category.keywords.some(keyword => userQuery.includes(keyword))) {
+            // Find matching category
+            for (const [category, info] of Object.entries(this.newsPortals)) {
+                if (info.keywords.some(keyword => userQuery.includes(keyword))) {
                     return {
-                        latestNews: [{
-                            title: category.title,
-                            source: { name: "Verified Sources" },
-                            urls: category.urls,
-                            publishedAt: new Date().toISOString()
-                        }],
+                        category,
+                        sources: info.sources,
+                        query: query,
                         timestamp: new Date(),
-                        suggestions: category.suggestions,
-                        category: categoryName
+                        articleLinks: info.sources.map(source => ({
+                            name: source.name,
+                            url: `${source.url}${source.url.includes('?') ? '&' : '?'}q=${encodeURIComponent(query)}`
+                        }))
                     };
                 }
             }
 
-            // Default to smart search response
+            // Default response with Google News search
             return {
-                latestNews: [{
-                    title: `Search Results for "${query}"`,
-                    source: { name: "Multiple Sources" },
-                    urls: {
-                        search: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
-                        factCheck: `https://www.google.com/search?q=${encodeURIComponent(query)}+fact+check`
-                    }
-                }],
-                suggestions: [
-                    "✓ Always verify information from multiple sources",
-                    "✓ Check recent news coverage",
-                    "✓ Look for official statements",
-                    "✓ Consider fact-checking websites"
-                ]
+                category: 'general',
+                query: query,
+                articleLinks: [{
+                    name: 'Google News',
+                    url: `https://news.google.com/search?q=${encodeURIComponent(query)}`
+                }]
             };
         } catch (error) {
             console.error('Error:', error);
@@ -188,6 +198,15 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
+        if (info.articleLinks) {
+            const links = info.articleLinks.map(article => 
+                `• <a href="${article.url}" target="_blank" style="color: #1a73e8;">${article.name}</a>`
+            ).join('\n');
+
+            return `📰 Articles about "${info.query}":\n\n${links}\n\n` +
+                   `Click any link above to read more. Always verify information from multiple sources.`;
+        }
+
         const latest = info.latestNews[0];
         
         if (info.category) {
