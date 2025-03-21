@@ -92,6 +92,36 @@ class FactCheckBot {
             },
             // Add more categories as needed
         };
+        this.newsCategories = {
+            philippines: {
+                keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila'],
+                sources: [
+                    { 
+                        name: 'Inquirer.net', 
+                        url: 'https://www.inquirer.net/search/',
+                        searchParam: 'q',
+                        credibility: 'Major news outlet',
+                        selector: 'article' // For future scraping
+                    },
+                    { name: 'Rappler', url: 'https://www.rappler.com/search?q=', credibility: 'Independent journalism' },
+                    { name: 'ABS-CBN News', url: 'https://news.abs-cbn.com/special-pages/search?q=', credibility: 'Leading broadcaster' }
+                ]
+            },
+            technology: {
+                keywords: ['tech', 'technology', 'digital', 'ai', 'software'],
+                sources: [
+                    { name: 'TechCrunch', url: 'https://techcrunch.com/search/', credibility: 'Tech industry leader' },
+                    { name: 'The Verge', url: 'https://www.theverge.com/search?q=', credibility: 'Tech news authority' }
+                ]
+            },
+            politics: {
+                keywords: ['politics', 'government', 'election', 'policy'],
+                sources: [
+                    { name: 'Reuters Politics', url: 'https://www.reuters.com/site-search/?query=', credibility: 'Global news agency' },
+                    { name: 'AP News Politics', url: 'https://apnews.com/search?q=', credibility: 'Trusted wire service' }
+                ]
+            }
+        };
     }
 
     initialize() {
@@ -126,36 +156,65 @@ class FactCheckBot {
     async fetchRealTimeInfo(query) {
         try {
             const userQuery = query.toLowerCase();
-            
-            // Find matching category
-            for (const [category, info] of Object.entries(this.newsPortals)) {
+            let newsData = null;
+
+            // Try Google News API first
+            try {
+                const response = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`);
+                const data = await response.text();
+                newsData = this.parseNewsData(data);
+            } catch (error) {
+                console.error('Google News API error:', error);
+            }
+
+            // Find matching category for additional sources
+            for (const [category, info] of Object.entries(this.newsCategories)) {
                 if (info.keywords.some(keyword => userQuery.includes(keyword))) {
                     return {
                         category,
-                        sources: info.sources,
-                        query: query,
-                        timestamp: new Date(),
-                        articleLinks: info.sources.map(source => ({
+                        query,
+                        mainArticle: newsData ? newsData[0] : null,
+                        sources: info.sources.map(source => ({
                             name: source.name,
-                            url: `${source.url}${source.url.includes('?') ? '&' : '?'}q=${encodeURIComponent(query)}`
-                        }))
+                            url: `${source.url}${source.searchParam}=${encodeURIComponent(query)}`,
+                            credibility: source.credibility
+                        })),
+                        timestamp: new Date()
                     };
                 }
             }
 
-            // Default response with Google News search
+            // Default response with the news we found
             return {
                 category: 'general',
-                query: query,
-                articleLinks: [{
-                    name: 'Google News',
-                    url: `https://news.google.com/search?q=${encodeURIComponent(query)}`
-                }]
+                query,
+                mainArticle: newsData ? newsData[0] : null,
+                sources: [
+                    { 
+                        name: 'Google News',
+                        url: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
+                        credibility: 'News aggregator'
+                    }
+                ]
             };
         } catch (error) {
             console.error('Error:', error);
             throw error;
         }
+    }
+
+    parseNewsData(rssData) {
+        // Basic RSS parser - you might want to use a proper RSS parser library
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rssData, 'text/xml');
+        const items = doc.querySelectorAll('item');
+        
+        return Array.from(items).map(item => ({
+            title: item.querySelector('title')?.textContent || '',
+            link: item.querySelector('link')?.textContent || '',
+            description: item.querySelector('description')?.textContent || '',
+            pubDate: item.querySelector('pubDate')?.textContent || ''
+        }));
     }
 
     processNewsData(data) {
@@ -198,30 +257,21 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
-        if (info.articleLinks) {
-            const links = info.articleLinks.map(article => 
-                `• <a href="${article.url}" target="_blank" style="color: #1a73e8;">${article.name}</a>`
-            ).join('\n');
+        let response = `📰 Latest information about "${info.query}":\n\n`;
 
-            return `📰 Articles about "${info.query}":\n\n${links}\n\n` +
-                   `Click any link above to read more. Always verify information from multiple sources.`;
+        if (info.mainArticle) {
+            response += `Latest Article: <a href="${info.mainArticle.link}" target="_blank" class="main-article">` +
+                       `${info.mainArticle.title}</a>\n` +
+                       `Published: ${new Date(info.mainArticle.pubDate).toLocaleDateString()}\n\n`;
         }
 
-        const latest = info.latestNews[0];
-        
-        if (info.category) {
-            const urls = latest.urls;
-            return `📰 ${latest.title}\n\nReliable sources:\n${info.suggestions.join('\n')}\n\n` +
-                   `🔍 Quick links:\n` +
-                   Object.entries(urls).map(([type, url]) => 
-                       `• ${type}: <a href="${url}" target="_blank">${url}</a>`
+        response += `Additional Sources:\n` +
+                   info.sources.map(source => 
+                       `• <a href="${source.url}" target="_blank" class="source-link" ` +
+                       `title="${source.credibility}">${source.name}</a>`
                    ).join('\n');
-        }
 
-        return `🔍 ${latest.title}\n\nRecommendations:\n${info.suggestions.join('\n')}\n\n` +
-               `Useful links:\n` +
-               `• News: <a href="${latest.urls.search}" target="_blank">Click here</a>\n` +
-               `• Fact Check: <a href="${latest.urls.factCheck}" target="_blank">Click here</a>`;
+        return response + '\n\n💡 Click any link above to read more. Sources are ranked by credibility.';
     }
 }
 
