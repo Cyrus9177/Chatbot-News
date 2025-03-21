@@ -103,7 +103,7 @@ class FactCheckBot {
     async fetchRealTimeInfo(query) {
         try {
             const userQuery = query.toLowerCase();
-            let response = null;
+            console.log('Fetching real-time info for query:', userQuery); // Debug log
 
             // First try topic-specific search
             for (const [topic, data] of Object.entries(this.newsCategories)) {
@@ -113,6 +113,8 @@ class FactCheckBot {
                         url: `${source.url}${encodeURIComponent(query)}`,
                         credibility: source.credibility
                     }));
+
+                    console.log('Found topic-specific sources:', topicSources); // Debug log
 
                     return {
                         topic,
@@ -125,21 +127,25 @@ class FactCheckBot {
             }
 
             // Default to general news search
+            const generalSources = [
+                {
+                    name: 'Google News',
+                    url: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
+                    credibility: 'News aggregator'
+                },
+                {
+                    name: 'Reuters Search',
+                    url: `https://www.reuters.com/search/news?blob=${encodeURIComponent(query)}`,
+                    credibility: 'International news agency'
+                }
+            ];
+
+            console.log('Using general news sources:', generalSources); // Debug log
+
             return {
                 topic: 'general',
                 query,
-                sources: [
-                    {
-                        name: 'Google News',
-                        url: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
-                        credibility: 'News aggregator'
-                    },
-                    {
-                        name: 'Reuters Search',
-                        url: `https://www.reuters.com/search/news?blob=${encodeURIComponent(query)}`,
-                        credibility: 'International news agency'
-                    }
-                ],
+                sources: generalSources,
                 searchUrl: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
                 timestamp: new Date()
             };
