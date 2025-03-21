@@ -74,7 +74,7 @@ class FactCheckBot {
 
     async fetchRealTimeInfo(query) {
         try {
-            // First, check for specific topics
+            // Check if query contains any of our topics
             const topics = ['covid', 'climate', 'health', 'science', 'technology'];
             const userQuery = query.toLowerCase();
             
@@ -89,24 +89,42 @@ class FactCheckBot {
                 }
             }
 
-            // If no specific topic found, provide a more helpful general response
-            const generalResponse = {
-                title: `Information about "${query}"`,
-                source: { name: "Multiple Sources" },
-                url: "https://www.reuters.com/fact-check",
-                publishedAt: new Date().toISOString(),
-                description: "To get accurate information about this topic, try:"
-            };
+            // For news queries, provide news-specific sources
+            if (userQuery.includes('news')) {
+                return {
+                    latestNews: [{
+                        title: `News about "${query.replace('?', '')}"`,
+                        source: { name: "News Sources" },
+                        url: "https://www.reuters.com",
+                        publishedAt: new Date().toISOString()
+                    }],
+                    timestamp: new Date(),
+                    sources: ["Reuters"],
+                    suggestions: [
+                        "Reuters for international news",
+                        "Associated Press for verified reporting",
+                        "BBC News for global coverage",
+                        "Local news sources for regional updates"
+                    ],
+                    isNews: true
+                };
+            }
 
+            // Default response for other queries
             return {
-                latestNews: [generalResponse],
+                latestNews: [{
+                    title: `Information about "${query.replace('?', '')}"`,
+                    source: { name: "Fact-Check Bot" },
+                    url: "https://www.reuters.com/fact-check",
+                    publishedAt: new Date().toISOString()
+                }],
                 timestamp: new Date(),
                 sources: ["Multiple Sources"],
                 suggestions: [
-                    "WHO.int for health information",
-                    "NASA.gov for space and climate",
-                    "CDC.gov for disease control",
-                    "Reuters Fact Check for general verification"
+                    "Reuters Fact Check for verification",
+                    "Associated Press Fact Check",
+                    "Snopes for fact checking",
+                    "Official government websites"
                 ]
             };
         } catch (error) {
@@ -155,22 +173,22 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
-        const latest = info.latestNews[0];
-        
-        if (info.suggestions) {
-            const query = latest.title.replace('Information about ', '').replace(/"/g, '');
-            return `For information about ${query}, here are reliable sources:\n\n` +
-                   `• ${info.suggestions[0]}\n` +
-                   `• ${info.suggestions[1]}\n` +
-                   `• ${info.suggestions[2]}\n` +
-                   `• ${info.suggestions[3]}\n\n` +
-                   `Visit: ${latest.url}`;
+        if (info.isNews) {
+            return `For news about "${info.latestNews[0].title.replace('News about ', '').replace(/"/g, '')}", check these sources:\n\n` +
+                   info.suggestions.map(s => `• ${s}`).join('\n') +
+                   `\n\nStart with: ${info.latestNews[0].url}`;
         }
 
-        return `Based on reliable information about ${info.topic}:\n\n` +
-               `"${latest.title}"\n` +
-               `Source: ${latest.source.name}\n` +
-               `Read more: ${latest.url}`;
+        if (info.suggestions) {
+            return `To verify information about "${info.latestNews[0].title.replace('Information about ', '').replace(/"/g, '')}":\n\n` +
+                   info.suggestions.map(s => `• ${s}`).join('\n') +
+                   `\n\nStart here: ${info.latestNews[0].url}`;
+        }
+
+        return `Based on reliable information about ${info.topic}:\n` +
+               `"${info.latestNews[0].title}"\n` +
+               `Source: ${info.latestNews[0].source.name}\n` +
+               `Read more: ${info.latestNews[0].url}`;
     }
 }
 
