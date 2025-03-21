@@ -74,42 +74,31 @@ class FactCheckBot {
 
     async fetchRealTimeInfo(query) {
         try {
-            // Try to find a matching topic in fallback data first
+            // Always use fallback data first
             const topic = query.toLowerCase();
-            const fallbackTopic = Object.keys(this.fallbackData).find(key => topic.includes(key));
-            if (fallbackTopic) {
-                return {
-                    latestNews: [this.fallbackData[fallbackTopic]],
-                    timestamp: new Date(),
-                    sources: [this.fallbackData[fallbackTopic].source.name]
-                };
+            for (const key of Object.keys(this.fallbackData)) {
+                if (topic.includes(key)) {
+                    console.log('Using fallback data for:', key);
+                    return {
+                        latestNews: [this.fallbackData[key]],
+                        timestamp: new Date(),
+                        sources: [this.fallbackData[key].source.name]
+                    };
+                }
             }
 
-            // If no fallback found, try the API
-            const response = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${this.apis.newsAPI}`);
-            const data = await response.json();
-            
-            if (data.status === 'error' || !data.articles || data.articles.length === 0) {
-                // Return general fallback if API fails
-                return {
-                    latestNews: [this.fallbackData.science],
-                    timestamp: new Date(),
-                    sources: ['Reliable Sources']
-                };
-            }
-            return this.processNewsData(data);
-        } catch (error) {
-            console.error('API Error:', error);
-            // Return general information on error
+            // If no specific match, return general information
             return {
-                latestNews: [{
-                    title: "Please check trusted sources for this information",
-                    source: { name: "Fact-Check Bot" },
-                    url: "https://www.reuters.com/fact-check",
-                    publishedAt: new Date().toISOString()
-                }],
+                latestNews: [this.fallbackData.general],
                 timestamp: new Date(),
-                sources: ['Fact-Check Bot']
+                sources: [this.fallbackData.general.source.name]
+            };
+        } catch (error) {
+            console.error('Error:', error);
+            return {
+                latestNews: [this.fallbackData.general],
+                timestamp: new Date(),
+                sources: ['Reliable Sources']
             };
         }
     }

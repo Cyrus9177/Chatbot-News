@@ -15,7 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add error handler for API limits
 async function handleApiError(error) {
     console.error('API Error:', error);
-    return "I've reached my API limit. Please try again later or check these reliable sources: WHO.int, CDC.gov, NASA.gov";
+    const generalInfo = {
+        title: "Here are some reliable sources for your query",
+        source: { name: "Fact-Check Bot" },
+        url: "https://www.reuters.com/fact-check",
+        publishedAt: new Date().toISOString()
+    };
+    return window.bot.formatRealTimeResponse('general', { latestNews: [generalInfo] });
 }
 
 // Make sendMessage globally available
