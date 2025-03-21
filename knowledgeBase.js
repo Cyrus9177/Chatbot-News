@@ -2,6 +2,7 @@ class KnowledgeBase {
     constructor() {
         this.facts = new Map();
         this.sources = new Map();
+        this.factCheckApiKey = config.factCheckAPI;
     }
 
     addFact(topic, fact, source) {
