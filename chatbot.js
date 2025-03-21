@@ -41,6 +41,38 @@ class FactCheckBot {
                 publishedAt: new Date().toISOString()
             }
         };
+        this.categories = {
+            philippines: {
+                keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila', 'ph'],
+                title: "Philippine News & Information",
+                suggestions: [
+                    "🔗 Inquirer.net - Latest Philippine news",
+                    "🔗 Philstar.com - Latest headlines",
+                    "🔗 Official Gazette - Government updates",
+                    "🔗 ABS-CBN News - Breaking news"
+                ],
+                urls: {
+                    news: "https://www.inquirer.net",
+                    government: "https://www.gov.ph",
+                    factCheck: "https://www.rappler.com/newsbreak/fact-check"
+                }
+            },
+            news: {
+                keywords: ['news', 'current', 'latest', 'update', 'today', 'breaking'],
+                title: "Current News & Updates",
+                suggestions: [
+                    "🌐 Reuters - International coverage",
+                    "🌐 AP News - Global updates",
+                    "🌐 BBC News - World news",
+                    "📰 Local news sources for regional context"
+                ],
+                urls: {
+                    international: "https://www.reuters.com",
+                    regional: "https://news.google.com"
+                }
+            },
+            // Add more categories as needed
+        };
     }
 
     initialize() {
@@ -76,78 +108,38 @@ class FactCheckBot {
         try {
             const userQuery = query.toLowerCase();
             
-            // Enhanced categories with specific URLs
-            const categories = {
-                philippines: {
-                    keywords: ['philippines', 'filipino', 'duterte', 'marcos', 'manila'],
-                    title: "Philippine News",
-                    suggestions: [
-                        "Philippine News Agency - Official news",
-                        "Rappler - Independent journalism",
-                        "Inquirer.net - Latest updates",
-                        "ABS-CBN News - Breaking news"
-                    ],
-                    url: "https://www.pna.gov.ph/latest"
-                },
-                news: {
-                    keywords: ['news', 'current', 'latest', 'update', 'today'],
-                    title: "Latest News Updates",
-                    suggestions: [
-                        "Reuters News - World coverage",
-                        "AP News - Breaking news",
-                        "BBC News - International news",
-                        "Al Jazeera - Global perspective"
-                    ],
-                    url: "https://www.reuters.com/world"
-                },
-                politics: {
-                    keywords: ['politics', 'government', 'election', 'president'],
-                    title: "Political Information",
-                    suggestions: [
-                        "Official government portals",
-                        "Election commission updates",
-                        "Political fact-checking sites",
-                        "Legislative updates"
-                    ],
-                    url: "https://www.gov.ph"
-                }
-            };
-
-            // Find matching category
-            for (const [categoryName, category] of Object.entries(categories)) {
+            // Check categories
+            for (const [categoryName, category] of Object.entries(this.categories)) {
                 if (category.keywords.some(keyword => userQuery.includes(keyword))) {
                     return {
                         latestNews: [{
                             title: category.title,
-                            source: { name: category.title },
-                            url: category.url,
+                            source: { name: "Verified Sources" },
+                            urls: category.urls,
                             publishedAt: new Date().toISOString()
                         }],
                         timestamp: new Date(),
-                        sources: category.suggestions,
-                        category: categoryName,
-                        specificSuggestions: category.suggestions,
-                        specificUrl: category.url
+                        suggestions: category.suggestions,
+                        category: categoryName
                     };
                 }
             }
 
-            // If no category matches, return topic-specific search
-            const searchQuery = encodeURIComponent(query);
+            // Default to smart search response
             return {
                 latestNews: [{
-                    title: `Information about "${query}"`,
-                    source: { name: "Search Results" },
-                    url: `https://www.google.com/search?q=${searchQuery}+fact+check`,
-                    publishedAt: new Date().toISOString()
+                    title: `Search Results for "${query}"`,
+                    source: { name: "Multiple Sources" },
+                    urls: {
+                        search: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
+                        factCheck: `https://www.google.com/search?q=${encodeURIComponent(query)}+fact+check`
+                    }
                 }],
-                timestamp: new Date(),
-                sources: ["Multiple Sources"],
                 suggestions: [
-                    `Search results for "${query}"`,
-                    "Fact-checking websites",
-                    "Official sources",
-                    "News archives"
+                    "✓ Always verify information from multiple sources",
+                    "✓ Check recent news coverage",
+                    "✓ Look for official statements",
+                    "✓ Consider fact-checking websites"
                 ]
             };
         } catch (error) {
@@ -196,28 +188,17 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
-        if (info.specificSuggestions) {
-            return `Here are reliable sources for ${info.latestNews[0].title}:\n\n` +
-                   info.specificSuggestions.map(s => `• ${s}`).join('\n') +
-                   `\n\nStart here: ${info.specificUrl}`;
-        }
-
+        const latest = info.latestNews[0];
+        
         if (info.category) {
-            return `Regarding "${info.latestNews[0].title}":\n\n` +
-                   info.suggestions.map(s => `• ${s}`).join('\n') +
-                   `\n\nRecommended source: ${info.latestNews[0].url}`;
+            const urls = latest.urls;
+            return `📰 ${latest.title}\n\nReliable sources:\n${info.suggestions.join('\n')}\n\n` +
+                   `🔍 Quick links:\n` +
+                   Object.entries(urls).map(([type, url]) => `• ${type}: ${url}`).join('\n');
         }
 
-        if (info.suggestions) {
-            return `To verify information about "${info.latestNews[0].title.replace('Information about ', '').replace(/"/g, '')}":\n\n` +
-                   info.suggestions.map(s => `• ${s}`).join('\n') +
-                   `\n\nStart here: ${info.latestNews[0].url}`;
-        }
-
-        return `Based on reliable information about ${info.topic}:\n` +
-               `"${info.latestNews[0].title}"\n` +
-               `Source: ${info.latestNews[0].source.name}\n` +
-               `Read more: ${info.latestNews[0].url}`;
+        return `🔍 ${latest.title}\n\nRecommendations:\n${info.suggestions.join('\n')}\n\n` +
+               `Useful links:\n• News: ${latest.urls.search}\n• Fact Check: ${latest.urls.factCheck}`;
     }
 }
 
