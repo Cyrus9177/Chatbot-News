@@ -80,6 +80,36 @@
             background-color: rgba(26, 115, 232, 0.1);
             text-decoration: underline;
         }
+        .source-link {
+            display: inline-block;
+            color: #1a73e8;
+            text-decoration: none;
+            padding: 4px 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            background: rgba(26, 115, 232, 0.1);
+        }
+        .source-link:hover {
+            background: rgba(26, 115, 232, 0.2);
+            transform: translateX(4px);
+        }
+        .source-link::before {
+            content: '🔗';
+            margin-right: 4px;
+        }
+        .more-results {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #333;
+            color: white !important;
+            border-radius: 15px;
+            margin-top: 8px;
+        }
+        .more-results:hover {
+            background: #555;
+            text-decoration: none !important;
+        }
         #input-container {
             padding: 20px;
             border-top: 1px solid #eee;
@@ -152,12 +182,44 @@
 
         // Update message rendering to support HTML
         window.sendMessage = async function() {
-            // ...existing code...
+            const input = document.getElementById('user-input');
+            const messages = document.getElementById('chat-messages');
+            
+            if (input.value.trim() === '') return;
+
+            // Add user message
             messages.innerHTML += `
-                <div class="message bot">
-                    <div class="message-content">${response.replace(/\n/g, '<br>')}</div>
+                <div class="message user">
+                    <div class="message-content">${input.value}</div>
                 </div>`;
-            // ...existing code...
+            
+            // Show loading indicator
+            messages.innerHTML += `
+                <div class="message bot" id="loading">
+                    <div class="message-content">Checking real-time sources...</div>
+                </div>`;
+
+            // Get bot response
+            try {
+                const response = await window.bot.processInput(input.value);
+                // Remove loading message
+                document.getElementById('loading').remove();
+                messages.innerHTML += `
+                    <div class="message bot">
+                        <div class="message-content">${response.replace(/\n/g, '<br>')}</div>
+                    </div>`;
+            } catch (error) {
+                document.getElementById('loading').remove();
+                const errorMessage = await handleApiError(error);
+                messages.innerHTML += `
+                    <div class="message bot error">
+                        <div class="message-content">${errorMessage}</div>
+                    </div>`;
+            }
+            
+            // Clear input and scroll
+            input.value = '';
+            messages.scrollTop = messages.scrollHeight;
         }
     </script>
     <script src="knowledgeBase.js"></script>

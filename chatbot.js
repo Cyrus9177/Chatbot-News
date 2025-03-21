@@ -100,8 +100,7 @@ class FactCheckBot {
                         name: 'Inquirer.net', 
                         url: 'https://www.inquirer.net/search/',
                         searchParam: 'q',
-                        credibility: 'Major news outlet',
-                        selector: 'article' // For future scraping
+                        credibility: 'Major news outlet'
                     },
                     { name: 'Rappler', url: 'https://www.rappler.com/search?q=', credibility: 'Independent journalism' },
                     { name: 'ABS-CBN News', url: 'https://news.abs-cbn.com/special-pages/search?q=', credibility: 'Leading broadcaster' }
@@ -141,12 +140,12 @@ class FactCheckBot {
             const realTimeInfo = await this.fetchRealTimeInfo(userInput);
             return this.generateResponse(intent, userInput, realTimeInfo);
         } catch (error) {
+            console.error('Error processing input:', error);
             return "I'm having trouble accessing real-time information. Please try again.";
         }
     }
 
     async analyzeIntent(input) {
-        // Simple intent analysis - can be enhanced with NLP libraries
         const normalizedInput = input.toLowerCase();
         if (normalizedInput.includes('?')) return 'question';
         if (normalizedInput.includes('fact')) return 'factCheck';
@@ -156,49 +155,48 @@ class FactCheckBot {
     async fetchRealTimeInfo(query) {
         try {
             const userQuery = query.toLowerCase();
-            let newsData = null;
+            let response = null;
 
-            // Try Google News API first
-            try {
-                const response = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`);
-                const data = await response.text();
-                newsData = this.parseNewsData(data);
-            } catch (error) {
-                console.error('Google News API error:', error);
-            }
+            // First try topic-specific search
+            for (const [topic, data] of Object.entries(this.newsCategories)) {
+                if (data.keywords.some(keyword => userQuery.includes(keyword))) {
+                    const topicSources = data.sources.map(source => ({
+                        name: source.name,
+                        url: `${source.url}${encodeURIComponent(query)}`,
+                        credibility: source.credibility
+                    }));
 
-            // Find matching category for additional sources
-            for (const [category, info] of Object.entries(this.newsCategories)) {
-                if (info.keywords.some(keyword => userQuery.includes(keyword))) {
                     return {
-                        category,
+                        topic,
                         query,
-                        mainArticle: newsData ? newsData[0] : null,
-                        sources: info.sources.map(source => ({
-                            name: source.name,
-                            url: `${source.url}${source.searchParam}=${encodeURIComponent(query)}`,
-                            credibility: source.credibility
-                        })),
+                        sources: topicSources,
+                        searchUrl: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
                         timestamp: new Date()
                     };
                 }
             }
 
-            // Default response with the news we found
+            // Default to general news search
             return {
-                category: 'general',
+                topic: 'general',
                 query,
-                mainArticle: newsData ? newsData[0] : null,
                 sources: [
-                    { 
+                    {
                         name: 'Google News',
                         url: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
                         credibility: 'News aggregator'
+                    },
+                    {
+                        name: 'Reuters Search',
+                        url: `https://www.reuters.com/search/news?blob=${encodeURIComponent(query)}`,
+                        credibility: 'International news agency'
                     }
-                ]
+                ],
+                searchUrl: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
+                timestamp: new Date()
             };
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Search error:', error);
             throw error;
         }
     }
@@ -257,21 +255,19 @@ class FactCheckBot {
     }
 
     formatRealTimeResponse(intent, info) {
-        let response = `📰 Latest information about "${info.query}":\n\n`;
+        const sourceLinks = info.sources.map(source => 
+            `• <a href="${source.url}" target="_blank" class="source-link" title="${source.credibility}">${source.name}</a>`
+        ).join('<br>');
 
-        if (info.mainArticle) {
-            response += `Latest Article: <a href="${info.mainArticle.link}" target="_blank" class="main-article">` +
-                       `${info.mainArticle.title}</a>\n` +
-                       `Published: ${new Date(info.mainArticle.pubDate).toLocaleDateString()}\n\n`;
+        let response = `📰 Results for "${info.query}":<br><br>${sourceLinks}<br><br>`;
+        
+        if (info.searchUrl) {
+            response += `🔍 More results: <a href="${info.searchUrl}" target="_blank" class="more-results">View all news</a><br><br>`;
         }
 
-        response += `Additional Sources:\n` +
-                   info.sources.map(source => 
-                       `• <a href="${source.url}" target="_blank" class="source-link" ` +
-                       `title="${source.credibility}">${source.name}</a>`
-                   ).join('\n');
-
-        return response + '\n\n💡 Click any link above to read more. Sources are ranked by credibility.';
+        response += `💡 Tips:<br>• Check multiple sources<br>• Look for recent updates<br>• Verify claims with official sources`;
+        
+        return response;
     }
 }
 
