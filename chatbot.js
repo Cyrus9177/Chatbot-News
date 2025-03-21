@@ -74,32 +74,44 @@ class FactCheckBot {
 
     async fetchRealTimeInfo(query) {
         try {
-            // Always use fallback data first
-            const topic = query.toLowerCase();
-            for (const key of Object.keys(this.fallbackData)) {
-                if (topic.includes(key)) {
-                    console.log('Using fallback data for:', key);
+            // First, check for specific topics
+            const topics = ['covid', 'climate', 'health', 'science', 'technology'];
+            const userQuery = query.toLowerCase();
+            
+            for (const topic of topics) {
+                if (userQuery.includes(topic)) {
                     return {
-                        latestNews: [this.fallbackData[key]],
+                        latestNews: [this.fallbackData[topic]],
                         timestamp: new Date(),
-                        sources: [this.fallbackData[key].source.name]
+                        sources: [this.fallbackData[topic].source.name],
+                        topic: topic
                     };
                 }
             }
 
-            // If no specific match, return general information
+            // If no specific topic found, provide a more helpful general response
+            const generalResponse = {
+                title: `Information about "${query}"`,
+                source: { name: "Multiple Sources" },
+                url: "https://www.reuters.com/fact-check",
+                publishedAt: new Date().toISOString(),
+                description: "To get accurate information about this topic, try:"
+            };
+
             return {
-                latestNews: [this.fallbackData.general],
+                latestNews: [generalResponse],
                 timestamp: new Date(),
-                sources: [this.fallbackData.general.source.name]
+                sources: ["Multiple Sources"],
+                suggestions: [
+                    "WHO.int for health information",
+                    "NASA.gov for space and climate",
+                    "CDC.gov for disease control",
+                    "Reuters Fact Check for general verification"
+                ]
             };
         } catch (error) {
             console.error('Error:', error);
-            return {
-                latestNews: [this.fallbackData.general],
-                timestamp: new Date(),
-                sources: ['Reliable Sources']
-            };
+            throw error;
         }
     }
 
@@ -144,10 +156,17 @@ class FactCheckBot {
 
     formatRealTimeResponse(intent, info) {
         const latest = info.latestNews[0];
-        return `Based on recent information (${new Date(latest.publishedAt).toLocaleDateString()}):
-                "${latest.title}"
-                Source: ${latest.source.name}
-                Read more: ${latest.url}`;
+        
+        if (info.suggestions) {
+            return `Here are reliable sources for "${info.latestNews[0].title}":
+                    \n${info.suggestions.join('\n')}
+                    \nFor fact-checking, visit: ${latest.url}`;
+        }
+
+        return `Based on reliable information about ${info.topic || 'this topic'}:
+                \n"${latest.title}"
+                \nSource: ${latest.source.name}
+                \nRead more: ${latest.url}`;
     }
 }
 
